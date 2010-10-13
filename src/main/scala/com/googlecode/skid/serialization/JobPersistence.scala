@@ -18,6 +18,8 @@ import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+import org.sgine.util.IO._
+
 object JobPersistence {
 	var TemporaryStorage = new File("temp")
 	
@@ -168,15 +170,6 @@ object JobPersistence {
 		}
 		
 		file
-	}
-	
-	@scala.annotation.tailrec
-	def stream(input: InputStream, output: OutputStream, buf: Array[Byte] = new Array[Byte](512)): Unit = {
-		val len = input.read(buf)
-		if (len != -1) {
-			output.write(buf, 0, len)
-			stream(input, output, buf)
-		}
 	}
 	
 	def main(args: Array[String]): Unit = {
