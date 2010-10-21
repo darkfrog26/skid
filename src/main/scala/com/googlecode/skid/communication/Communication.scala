@@ -15,6 +15,7 @@ import org.sgine.util.IO._
 
 trait Communication extends Listenable {
 	protected def connection: Socket
+	protected def directory: File
 	
 	private var keepAlive = true
 	private val readThread = new Thread(FunctionRunnable(readRunner))
@@ -25,13 +26,15 @@ trait Communication extends Listenable {
 	protected lazy val objectInput = new ObjectInputStream(connection.getInputStream)
 	protected lazy val objectOutput = new ObjectOutputStream(connection.getOutputStream)
 	
-	protected def init() = {
+	def connect() = {
 		if (!readThread.isAlive) {
 			readThread.setDaemon(true)
 			writeThread.setDaemon(true)
 			
-			readThread.start()
-			writeThread.start()
+			if ((input != null) && (output != null) && (objectInput != null) && (objectOutput != null)) {
+				readThread.start()
+				writeThread.start()
+			}
 		}
 	}
 	
@@ -75,8 +78,12 @@ trait Communication extends Listenable {
 		val length = input.readInt()
 		
 		// Write file
+		val file = createFile(uuid)
+		val output = new FileOutputStream(file)
+		stream(input, output, length = length)
 		
 		// Throw event
+		Event.enqueue(FileReceived(uuid, file, this))
 	}
 	
 	private def readObject(uuid: UUID) = {
@@ -121,5 +128,20 @@ trait Communication extends Listenable {
 		// Stream object
 		objectOutput.writeObject(value)
 		objectOutput.flush()
+	}
+	
+	@scala.annotation.tailrec
+	private def createFile(uuid: UUID, offset: Int = 0): File = {
+		val filename = if (offset > 0) {
+			uuid.toString + " (" + offset + ")"
+		} else {
+			uuid.toString
+		}
+		val f = new File(directory, filename)
+		if (f.exists) {
+			createFile(uuid, offset + 1)
+		} else {
+			f
+		}
 	}
 }

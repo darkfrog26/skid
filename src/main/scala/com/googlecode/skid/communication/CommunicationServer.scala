@@ -1,14 +1,18 @@
 package com.googlecode.skid.communication
 
+import java.io.File
+
 import java.net._
 
 import org.sgine.event.Event
+
+import org.sgine.log._
 
 import org.sgine.util.FunctionRunnable
 
 import scala.collection.mutable.SynchronizedQueue
 
-class CommunicationServer(val address: SocketAddress) {
+class CommunicationServer(val address: SocketAddress, val directory: File) {
 	private val serverSocket = new ServerSocket()
 	
 	private var keepAlive = true
@@ -16,9 +20,7 @@ class CommunicationServer(val address: SocketAddress) {
 	
 	private val queue = new SynchronizedQueue[CommunicationServerNode]
 	
-	init()
-	
-	protected def init() = {
+	def start() = {
 		serverSocket.bind(address)
 		serverSocket.setSoTimeout(5000)
 	}
@@ -27,8 +29,11 @@ class CommunicationServer(val address: SocketAddress) {
 		while (keepAlive) {
 			try {
 				val socket = serverSocket.accept()
-				val node = new CommunicationServerNode(this, socket)
+				val node = new CommunicationServerNode(this, socket, directory)
+				node.connect()
 				queue += node
+				
+				info("Socket connection established to server: " + socket.getInetAddress)
 				
 				Event.enqueue(ConnectionEstablished(node))
 			} catch {
@@ -37,4 +42,6 @@ class CommunicationServer(val address: SocketAddress) {
 		}
 		serverSocket.close()
 	}
+	
+	def shutdown() = keepAlive = false
 }

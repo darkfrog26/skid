@@ -1,7 +1,7 @@
 package com.googlecode.skid.communication
 
+import java.io.File
+
 import java.net.Socket
 
-class CommunicationServerNode(val server: CommunicationServer, val connection: Socket) extends Communication {
-	init()
-}
+class CommunicationServerNode(val server: CommunicationServer, val connection: Socket, val directory: File) extends Communication

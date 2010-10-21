@@ -1,20 +1,24 @@
 package com.googlecode.skid.communication
 
+import java.io.File
+
 import java.net._
 
 import org.sgine.event.Event
-class CommunicationClient(val address: SocketAddress) extends Communication {
+
+import org.sgine.log._
+class CommunicationClient(val address: SocketAddress, val directory: File) extends Communication {
 	protected val connection: Socket = new Socket()
 	
-	connect()
-	
-	private def connect() = {
-		if (connection != null) {
+	override def connect() = {
+		if (connection.isConnected) {
 			throw new ConnectException("Unable to establish connection as a connection already exists!")
 		}
+		info("Connecting to server: %1s", args = List(address))
 		connection.connect(address)
+		info("Connection to server established. Initializing.")
 		
-		init()
+		super.connect()
 		
 		Event.enqueue(ConnectionEstablished(this))
 	}
