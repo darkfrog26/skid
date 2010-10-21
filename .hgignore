@@ -11,3 +11,5 @@ syntax: regexp
 ^\.project$
 syntax: regexp
 ^project/boot$
+syntax: regexp
+^target$

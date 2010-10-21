@@ -5,6 +5,7 @@ import java.io.File
 import java.net._
 
 import org.sgine.event.Event
+import org.sgine.event.Listenable
 
 import org.sgine.log._
 
@@ -12,7 +13,7 @@ import org.sgine.util.FunctionRunnable
 
 import scala.collection.mutable.SynchronizedQueue
 
-class CommunicationServer(val address: SocketAddress, val directory: File) {
+class CommunicationServer(val address: SocketAddress, val directory: File) extends Listenable {
 	private val serverSocket = new ServerSocket()
 	
 	private var keepAlive = true
@@ -23,6 +24,8 @@ class CommunicationServer(val address: SocketAddress, val directory: File) {
 	def start() = {
 		serverSocket.bind(address)
 		serverSocket.setSoTimeout(5000)
+		
+		thread.start()
 	}
 	
 	private def run() = {

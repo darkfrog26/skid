@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import org.sgine.event.Event
 import org.sgine.event.Listenable
 
+import org.sgine.log._
+
 import org.sgine.util.FunctionRunnable
 import org.sgine.util.IO._
 
@@ -23,18 +25,14 @@ trait Communication extends Listenable {
 	private val queue = new ConcurrentLinkedQueue[(UUID, Any)]
 	protected lazy val input = new DataInputStream(connection.getInputStream)
 	protected lazy val output = new DataOutputStream(connection.getOutputStream)
-	protected lazy val objectInput = new ObjectInputStream(connection.getInputStream)
-	protected lazy val objectOutput = new ObjectOutputStream(connection.getOutputStream)
 	
 	def connect() = {
 		if (!readThread.isAlive) {
 			readThread.setDaemon(true)
 			writeThread.setDaemon(true)
 			
-			if ((input != null) && (output != null) && (objectInput != null) && (objectOutput != null)) {
-				readThread.start()
-				writeThread.start()
-			}
+			readThread.start()
+			writeThread.start()
 		}
 	}
 	
@@ -48,27 +46,45 @@ trait Communication extends Listenable {
 	def send(uuid: UUID, value: Any) = queue.add(uuid -> value)
 	
 	private def readRunner() = {
-		while (keepAlive) {
-			// Read UUID
-			val uuid = objectInput.readObject().asInstanceOf[UUID]
-			if (uuid != null) {
-				// Read header
-				val header = CommunicationHeader(input.readInt())
-				header match {
-					case CommunicationHeader.File => readFile(uuid)
-					case CommunicationHeader.Object => readObject(uuid)
-					case _ => throw new RuntimeException("Unknown CommunicationHeader: " + header)
+		try {
+			while (keepAlive) {
+				// Read UUID
+				val uuid = readObject().asInstanceOf[UUID]
+				if (uuid != null) {
+					// Read header
+					val header = CommunicationHeader(input.readInt())
+					header match {
+						case CommunicationHeader.File => readFile(uuid)
+						case CommunicationHeader.Object => readObject(uuid)
+						case _ => throw new RuntimeException("Unknown CommunicationHeader: " + header)
+					}
 				}
+			}
+		} catch {
+			case exc if (!keepAlive) =>	// Ignore
+			case exc => {
+				warn(exc.getClass.getName)
+				// TODO: notify of connection drop
+				keepAlive = false
 			}
 		}
 	}
 	
 	private def writeRunner() = {
-		while (keepAlive) {
-			queue.poll() match {
-				case null => Thread.sleep(50)
-				case (uuid: UUID, file: File) => sendFile(uuid, file)
-				case (uuid: UUID, value: Any) => sendObject(uuid, value)
+		try {
+			while (keepAlive) {
+				queue.poll() match {
+					case null => Thread.sleep(50)
+					case (uuid: UUID, file: File) => sendFile(uuid, file)
+					case (uuid: UUID, value: Any) => sendObject(uuid, value)
+				}
+			}
+		} catch {
+			case exc if (!keepAlive) =>	// Ignore
+			case exc => {
+				warn(exc.getClass.getName)
+				// TODO: notify of connection drop
+				keepAlive = false
 			}
 		}
 	}
@@ -86,9 +102,9 @@ trait Communication extends Listenable {
 		Event.enqueue(FileReceived(uuid, file, this))
 	}
 	
-	private def readObject(uuid: UUID) = {
+	private def readObject(uuid: UUID): Any = {
 		// Read object
-		val value = objectInput.readObject()
+		val value = readObject()
 		
 		// Throw event
 		Event.enqueue(ObjectReceived(uuid, value, this))
@@ -96,8 +112,7 @@ trait Communication extends Listenable {
 	
 	private def sendFile(uuid: UUID, file: File) = {
 		// Send UUID
-		objectOutput.writeObject(uuid)
-		objectOutput.flush()
+		writeObject(uuid)
 		
 		// Send file header
 		output.writeInt(CommunicationHeader.File.ordinal)
@@ -119,15 +134,13 @@ trait Communication extends Listenable {
 	
 	private def sendObject(uuid: UUID, value: Any) = {
 		// Send UUID
-		objectOutput.writeObject(uuid)
-		objectOutput.flush()
+		writeObject(uuid)
 		
 		// Send object header
 		output.writeInt(CommunicationHeader.Object.ordinal)
 		
 		// Stream object
-		objectOutput.writeObject(value)
-		objectOutput.flush()
+		writeObject(value)
 	}
 	
 	@scala.annotation.tailrec
@@ -142,6 +155,39 @@ trait Communication extends Listenable {
 			createFile(uuid, offset + 1)
 		} else {
 			f
+		}
+	}
+	
+	def readObject(): Any = {
+		val length = input.readInt()
+		val data = new Array[Byte](length)
+		input.readFully(data)
+		fromBytes(data)
+	}
+	
+	def writeObject(o: Any) = {
+		val data = toBytes(o)
+		output.writeInt(data.length)
+		output.write(data)
+		output.flush()
+	}
+	
+	private def toBytes(o: Any) = {
+		val bos = new ByteArrayOutputStream()
+		val oos = new ObjectOutputStream(bos)
+		oos.writeObject(o)
+		oos.flush()
+		bos.close()
+		bos.toByteArray()
+	}
+	
+	private def fromBytes(data: Array[Byte]) = {
+		val bis = new ByteArrayInputStream(data)
+		val ois = new ObjectInputStream(bis)
+		try {
+			ois.readObject()
+		} finally {
+			ois.close()
 		}
 	}
 }
