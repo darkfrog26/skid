@@ -40,11 +40,11 @@ class BasicCommunicationSpec extends FlatSpec with ShouldMatchers {
 	}
 	
 	it should "add listeners" in {
-		val f = (evt: ObjectReceived) => if (evt.uuid == clientUUID1) {
+		val evt = new java.util.concurrent.atomic.AtomicReference[ObjectReceived]
+		server.onEvent[ObjectReceived](ProcessingMode.Blocking, Recursion.Children, container = evt) {
 			clientUUID1Received = true
-			clientMessage1 = evt.obj
+			clientMessage1 = evt.get.obj
 		}
-		server.listeners += EventHandler(f, ProcessingMode.Blocking, Recursion.Children)
 	}
 	
 	"CommunicationServer" should "start" in {
