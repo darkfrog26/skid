@@ -64,6 +64,7 @@ trait Communication extends Listenable {
 			case exc if (!keepAlive) =>	// Ignore
 			case exc => {
 				warn(exc.getClass.getName)
+//				exc.printStackTrace()
 				// TODO: notify of connection drop
 				keepAlive = false
 			}
@@ -83,6 +84,7 @@ trait Communication extends Listenable {
 			case exc if (!keepAlive) =>	// Ignore
 			case exc => {
 				warn(exc.getClass.getName)
+//				exc.printStackTrace()
 				// TODO: notify of connection drop
 				keepAlive = false
 			}
@@ -118,12 +120,12 @@ trait Communication extends Listenable {
 		output.writeInt(CommunicationHeader.File.ordinal)
 		
 		// Send file length
-		output.writeLong(file.length)
+		output.writeInt(file.length.toInt)
 		
 		// Open input stream for file and transfer
 		val input = new FileInputStream(file)
 		try {
-			stream(input, output)
+			stream(input, output, length = file.length.toInt)
 			
 			Event.enqueue(FileSent(uuid, file, this))
 		} finally {
