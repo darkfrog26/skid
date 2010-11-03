@@ -1,6 +1,7 @@
 package com.googlecode.skid
 
 import com.googlecode.skid.communication._
+import com.googlecode.skid.serialization._
 
 import java.io.File
 
@@ -19,6 +20,8 @@ import org.sgine.event.Recursion
 import org.sgine.util.Time
 
 class BasicCommunicationSpec extends FlatSpec with ShouldMatchers {
+	org.sgine.log.Log.sourceLookup = true
+	
 	private val serverAddress = new InetSocketAddress("localhost", 2600)
 	private val serverDirectory = new File("temp/server")
 	private val server = new CommunicationServer(serverAddress, serverDirectory)
@@ -48,14 +51,12 @@ class BasicCommunicationSpec extends FlatSpec with ShouldMatchers {
 	
 	private val testFile1 = new File("lib/sgine_2.8.0-1.0.jar")
 	
-//	org.sgine.log.Log.sourceLookup = true
-	
 	"Setup" should "initialize directories" in {
+		JobPersistence.delete(serverDirectory)
+		JobPersistence.delete(clientDirectory)
+		
 		serverDirectory.mkdirs()
 		clientDirectory.mkdirs()
-		
-		serverDirectory.listFiles.foreach(_.delete)
-		clientDirectory.listFiles.foreach(_.delete)
 	}
 	
 	it should "add listeners" in {

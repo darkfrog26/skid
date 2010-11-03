@@ -92,11 +92,14 @@ trait Communication extends Listenable {
 	}
 	
 	private def readFile(uuid: UUID) = {
+		// Read file name
+		val name = readObject().asInstanceOf[String]
+		
 		// Read file length
 		val length = input.readInt()
 		
 		// Write file
-		val file = createFile(uuid)
+		val file = createFile(uuid, name)
 		val output = new FileOutputStream(file)
 		stream(input, output, length = length)
 		
@@ -118,6 +121,10 @@ trait Communication extends Listenable {
 		
 		// Send file header
 		output.writeInt(CommunicationHeader.File.ordinal)
+		
+		// Send filename
+		val name = file.getName
+		writeObject(name)
 		
 		// Send file length
 		output.writeInt(file.length.toInt)
@@ -145,19 +152,10 @@ trait Communication extends Listenable {
 		writeObject(value)
 	}
 	
-	@scala.annotation.tailrec
-	private def createFile(uuid: UUID, offset: Int = 0): File = {
-		val filename = if (offset > 0) {
-			uuid.toString + " (" + offset + ")"
-		} else {
-			uuid.toString
-		}
-		val f = new File(directory, filename)
-		if (f.exists) {
-			createFile(uuid, offset + 1)
-		} else {
-			f
-		}
+	private def createFile(uuid: UUID, filename: String): File = {
+		val uuidDirectory = new File(directory, uuid.toString)
+		uuidDirectory.mkdirs()
+		new File(uuidDirectory, filename)
 	}
 	
 	def readObject(): Any = {

@@ -18,13 +18,20 @@ import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+import org.sgine.log._
+
 import org.sgine.util.IO._
 
-object JobPersistence {
-	var TemporaryStorage = new File("temp")
+class JobPersistence private(storage: File) {
+	def delete(uuid: UUID): Boolean = JobPersistence.delete(new File(storage, uuid.toString))
+	
+	def files(uuid: UUID) = {
+		val directory = new File(storage, uuid.toString)
+		directory.listFiles()
+	}
 	
 	def load(uuid: UUID) = {
-		val directory = new File(TemporaryStorage, uuid.toString)
+		val directory = new File(storage, uuid.toString)
 		
 		// Load job object
 		val info = loadJobInfo(directory)
@@ -95,7 +102,7 @@ object JobPersistence {
 	def persist(f: AnyRef, resources: JobResource*) = {
 		// Make sure storage directory exists
 		val uuid = UUID.randomUUID()
-		val directory = new File(TemporaryStorage, uuid.toString)
+		val directory = new File(storage, uuid.toString)
 		directory.mkdirs()
 		
 		// Convert distributed resources into files
@@ -173,9 +180,32 @@ object JobPersistence {
 	}
 	
 	def main(args: Array[String]): Unit = {
-		val f = () => println("This is my persistent function!")
-		println(persist(f, JobResource(f.getClass, distribute = true)))
+//		val f = () => println("This is my persistent function!")
+//		println(persist(f, JobResource(f.getClass, distribute = true)))
 		
 //		val f = load(UUID.fromString("4dceecd2-2758-4cc4-8c43-496f9e9f69e5"))
+		
+		delete(UUID.fromString("689fd724-d193-4c4e-97f7-b62a8b8be148"))
+	}
+}
+
+object JobPersistence {
+	def apply(file: File) = new JobPersistence(file)
+	
+	def delete(directory: File): Boolean = {
+		if (directory.exists) {
+			for (file <- directory.listFiles) {
+				if (file.isDirectory) {
+					delete(file)
+				} else {
+					if (!file.delete()) {
+						warn("Unable to delete: " + file.getAbsolutePath)
+					}
+				}
+			}
+			directory.delete()
+		} else {
+			true
+		}
 	}
 }
