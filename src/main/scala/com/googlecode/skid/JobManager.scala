@@ -42,7 +42,7 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) {
 		}
 	}
 	
-	def requestWork() = transaction.find(classOf[Work])
+	def requestWork() = transaction.find[Work]()
 }
 
 object JobManager {
