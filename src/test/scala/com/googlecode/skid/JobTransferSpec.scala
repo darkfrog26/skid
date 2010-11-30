@@ -34,6 +34,10 @@ class JobTransferSpec extends FlatSpec with ShouldMatchers {
 		server.start()
 	}
 	
+	it should "not have any work ready for processing" in {
+		server.requestWork() should equal(None)
+	}
+	
 	"Client" should "start successfully" in {
 		client.start()
 	}
@@ -52,6 +56,9 @@ class JobTransferSpec extends FlatSpec with ShouldMatchers {
 			}
 		}
 		work should not equal(null)
-		println("Found Work in Server!")
+	}
+	
+	it should "not find additional work" in {
+		server.requestWork() should equal(None)
 	}
 }

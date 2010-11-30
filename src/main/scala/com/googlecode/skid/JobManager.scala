@@ -42,7 +42,20 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) {
 		}
 	}
 	
-	def requestWork() = transaction.find[Work]()
+	def requestWork() = synchronized {		// Must be synchronized so the same work doesn't get assigned twice
+		transaction.find[Work](predicate, sort) map workMapper
+	}
+	
+	private val workMapper = (w: Work) => {
+		w.processing = true
+		w
+	}
+	
+	// Make sure it's not already being processed
+	private val predicate = (w: Work) => !w.processing
+	
+	// Make sure they come out in the right order
+	private val sort = (w1: Work, w2: Work) => w1.created.compareTo(w2.created)
 }
 
 object JobManager {
