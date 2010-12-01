@@ -49,7 +49,7 @@ class BasicCommunicationSpec extends FlatSpec with ShouldMatchers {
 	private var serverUUID2Received = false
 	private var serverMessage2: Any = _
 	
-	private val testFile1 = new File("lib/sgine_2.8.0-1.0.jar")
+	private val testFile1 = new File("lib/sgine_2.8.1-1.0.jar")
 	
 	"Setup" should "initialize directories" in {
 		JobPersistence.delete(serverDirectory)

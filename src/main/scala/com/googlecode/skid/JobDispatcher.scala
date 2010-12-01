@@ -48,6 +48,10 @@ class JobDispatcher private(serverAddress: InetSocketAddress, storage: File) {
 		// Return the UUID
 		uuid
 	}
+	
+	def shutdown() = {
+		client.disconnect()
+	}
 }
 
 object JobDispatcher {

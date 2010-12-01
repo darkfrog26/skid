@@ -101,7 +101,12 @@ trait Communication extends Listenable {
 		// Write file
 		val file = createFile(uuid, name)
 		val output = new FileOutputStream(file)
-		stream(input, output, length = length)
+		try {
+			stream(input, output, length = length)
+		} finally {
+			output.flush()
+			output.close()
+		}
 		
 		// Throw event
 		Event.enqueue(FileReceived(uuid, file, this))

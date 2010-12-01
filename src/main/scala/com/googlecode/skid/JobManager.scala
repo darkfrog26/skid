@@ -56,6 +56,11 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) {
 	
 	// Make sure they come out in the right order
 	private val sort = (w1: Work, w2: Work) => w1.created.compareTo(w2.created)
+	
+	def shutdown() = {
+		server.shutdown()
+		db.close()
+	}
 }
 
 object JobManager {

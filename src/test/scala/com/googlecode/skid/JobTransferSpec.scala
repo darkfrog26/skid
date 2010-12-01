@@ -61,4 +61,9 @@ class JobTransferSpec extends FlatSpec with ShouldMatchers {
 	it should "not find additional work" in {
 		server.requestWork() should equal(None)
 	}
+	
+	"Setup" should "tear down" in {
+		client.shutdown()
+		server.shutdown()
+	}
 }
