@@ -38,9 +38,12 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) {
 	private def receivedObject(evt: ObjectReceived) = {
 		evt.obj match {
 			case work: Work => transaction.store(work)
+			case request: WorkRequest => remoteWorkRequest(evt)
 			case obj => warn("JobManager received unknown object: " + obj)
 		}
 	}
+	
+	private def remoteWorkRequest(evt: ObjectReceived) = evt.communication.sendWork(evt.uuid, requestWork())
 	
 	def requestWork() = synchronized {		// Must be synchronized so the same work doesn't get assigned twice
 		transaction.find[Work](predicate, sort) map workMapper

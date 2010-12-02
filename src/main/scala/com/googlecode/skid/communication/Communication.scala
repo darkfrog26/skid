@@ -7,6 +7,8 @@ import java.net._
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
+import com.googlecode.skid._
+
 import org.sgine.event.Event
 import org.sgine.event.Listenable
 
@@ -44,6 +46,20 @@ trait Communication extends Listenable {
 	}
 	
 	def send(uuid: UUID, value: Any) = queue.add(uuid -> value)
+
+	def sendWork(uuid: UUID, option: Option[Work]) = option match {
+		case Some(work) => {
+			// Transfer all files for job
+			val workDirectory = new File(directory, work.uuid.toString)
+			for (file <- workDirectory.listFiles) {
+				send(work.uuid, file)
+			}
+			
+			// Send the response
+			send(uuid, work)
+		}
+		case None => send(uuid, null)
+	}
 	
 	private def readRunner() = {
 		try {
@@ -84,7 +100,7 @@ trait Communication extends Listenable {
 			case exc if (!keepAlive) =>	// Ignore
 			case exc => {
 				warn(exc.getClass.getName)
-//				exc.printStackTrace()
+				exc.printStackTrace()
 				// TODO: notify of connection drop
 				keepAlive = false
 			}

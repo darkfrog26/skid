@@ -42,7 +42,7 @@ class JobDispatcher private(serverAddress: InetSocketAddress, storage: File) {
 			client.send(uuid, file)
 		}
 		
-		// Send an object with a reference to the UUID to start working
+		// Send an object with a reference to the UUID to persist the work
 		client.send(uuid, Work(uuid))
 		
 		// Return the UUID
