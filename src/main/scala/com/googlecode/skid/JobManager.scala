@@ -46,6 +46,8 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) {
 		transaction.find[Work](predicate, sort) map workMapper
 	}
 	
+	def work = transaction.query[Work]().size
+	
 	private val workMapper = (w: Work) => {
 		w.processing = true
 		w
