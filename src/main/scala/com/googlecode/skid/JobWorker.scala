@@ -9,8 +9,10 @@ import java.net.InetSocketAddress
 
 import java.util.UUID
 
-class JobWorker private(serverAddress: InetSocketAddress, storage: File) {
-	private val client = new CommunicationClient(serverAddress, storage)
+import org.sgine.event._
+
+class JobWorker private(serverAddress: InetSocketAddress, storage: File) extends Listenable {
+	private val client = new CommunicationClient(this, serverAddress, storage)
 	private val persistence = JobPersistence(storage)
 	
 	def start() = {
@@ -42,7 +44,7 @@ class JobWorker private(serverAddress: InetSocketAddress, storage: File) {
 	
 	protected[skid] def finishedWork(work: Work, response: Any) = {
 		// Send message back to server for completion of work
-		client.send(work.uuid, WorkResponse(work, response))
+		client.send(work.uuid, WorkResponse(work, response, Status.Success))
 	}
 }
 

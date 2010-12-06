@@ -183,26 +183,32 @@ trait Communication extends Listenable {
 		val length = input.readInt()
 		val data = new Array[Byte](length)
 		input.readFully(data)
-		fromBytes(data)
+		Communication.fromBytes(data)
 	}
 	
 	def writeObject(o: Any) = {
-		val data = toBytes(o)
+		val data = Communication.toBytes(o)
 		output.writeInt(data.length)
 		output.write(data)
 		output.flush()
 	}
-	
-	private def toBytes(o: Any) = {
-		val bos = new ByteArrayOutputStream()
-		val oos = new ObjectOutputStream(bos)
-		oos.writeObject(o)
-		oos.flush()
-		bos.close()
-		bos.toByteArray()
+}
+
+object Communication {
+	def toBytes(o: Any) = {
+		try {
+			val bos = new ByteArrayOutputStream()
+			val oos = new ObjectOutputStream(bos)
+			oos.writeObject(o)
+			oos.flush()
+			bos.close()
+			bos.toByteArray()
+		} catch {
+			case exc: NotSerializableException => throw new RuntimeException("Cannot Serialize: " + o + " (" + o.asInstanceOf[AnyRef].getClass + ")", exc)
+		}
 	}
 	
-	private def fromBytes(data: Array[Byte]) = {
+	def fromBytes(data: Array[Byte]) = {
 		val bis = new ByteArrayInputStream(data)
 		val ois = new ObjectInputStream(bis)
 		try {

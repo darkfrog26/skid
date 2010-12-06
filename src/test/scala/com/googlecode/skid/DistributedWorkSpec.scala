@@ -9,6 +9,8 @@ import java.net.InetSocketAddress
 
 import java.util.UUID
 
+import org.sgine.event._
+
 import org.sgine.util.Time
 
 import org.specs._
@@ -27,6 +29,7 @@ object DistributedWorkSpec extends Specification {
 	private val worker1 = JobWorker(serverAddress, worker1Directory)
 	
 	private var workId: UUID = _
+	private var workFinished = false
 	
 	org.specs.util.Configuration.config = new org.specs.util.Configuration {
 		override def examplesWithoutExpectationsMustBePending = false
@@ -78,6 +81,15 @@ object DistributedWorkSpec extends Specification {
 			client.start()
 		}
 		
+		"listen for WorkFinished" in {
+			client.onEvent[ObjectReceived](recursion = Recursion.Children, filter = (evt: ObjectReceived) => evt.obj match {
+				case wf: WorkFinished => wf.work.uuid == workId
+				case _ => false
+			}) {
+				workFinished = true
+			}
+		}
+		
 		"dispatch function to server" in {
 			val f = () => "Hello from client!"
 			workId = client.send(f, JobResource(f.getClass, distribute = true))
@@ -119,7 +131,24 @@ object DistributedWorkSpec extends Specification {
 	
 	"JobManager" should {
 		"have no pending jobs" in {
+			Time.waitFor(10.0) {
+				server.work == 0
+			}
 			server.work must_== 0
+		}
+	}
+	
+	"JobDispatch" should {
+		"receive the WorkFinished message" in {
+			Time.waitFor(10.0) {
+				workFinished
+			} must_== true
+		}
+		"request the response" in {
+			val wr = client.status(workId).get
+			wr.work.uuid must_== workId
+			wr.status must_== Status.Success
+			wr.response must_== "Hello from client!"
 		}
 	}
 	

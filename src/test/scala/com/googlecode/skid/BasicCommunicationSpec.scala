@@ -26,7 +26,7 @@ class BasicCommunicationSpec extends FlatSpec with ShouldMatchers {
 	private val serverDirectory = new File("temp/server")
 	private val server = new CommunicationServer(serverAddress, serverDirectory)
 	private val clientDirectory = new File("temp/client")
-	private val client = new CommunicationClient(serverAddress, clientDirectory)
+	private val client = new CommunicationClient(null, serverAddress, clientDirectory)
 	
 	private var clientConnected = false
 	private var serverConnected = false

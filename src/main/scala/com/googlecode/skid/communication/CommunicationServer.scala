@@ -28,6 +28,8 @@ class CommunicationServer(val address: SocketAddress, val directory: File) exten
 		thread.start()
 	}
 	
+	def clients = queue.iterator
+	
 	private def run() = {
 		while (keepAlive) {
 			try {

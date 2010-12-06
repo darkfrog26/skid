@@ -6,9 +6,9 @@ import com.googlecode.skid.serialization._
 
 import java.net.InetSocketAddress
 
-import org.sgine.event.Event
-import org.sgine.event.EventHandler
-import org.sgine.event.Recursion
+import java.util.UUID
+
+import org.sgine.event._
 
 import org.sgine.log._
 
@@ -19,18 +19,18 @@ import org.sgine.log._
  * 
  * @author Matt Hicks <mhicks@sgine.org>
  */
-class JobDispatcher private(serverAddress: InetSocketAddress, storage: File) {
-	private val client = new CommunicationClient(serverAddress, storage)
+class JobDispatcher private(serverAddress: InetSocketAddress, storage: File) extends Listenable {
+	private val client = new CommunicationClient(this, serverAddress, storage)
 	private val persistence = JobPersistence(new File(storage, "temp"))
 	
 	def start() = {
-		client.listeners += EventHandler(clientEvent, recursion = Recursion.Children)
+		client.listeners += EventHandler(clientEvent)
 		
 		client.connect()
 	}
 	
 	private def clientEvent(evt: Event) = {
-//		info(evt)
+//		println("JobDispatcher.clientEvent: " + evt)
 	}
 	
 	def send(f: AnyRef, resources: JobResource*) = {
@@ -47,6 +47,22 @@ class JobDispatcher private(serverAddress: InetSocketAddress, storage: File) {
 		
 		// Return the UUID
 		uuid
+	}
+	
+	def status(uuid: UUID, time: Double = 10.0) = {
+		// Send request for status
+		client.send(uuid, WorkStatusRequest(uuid))
+		
+		// Wait for WorkResponse
+		val evt = client.waitForEvent[ObjectReceived](time, filter = (evt: ObjectReceived) => evt.obj match {
+			case wr: WorkResponse => evt.uuid == uuid
+			case _ => false
+		})
+		if (evt != null) {
+			Some(evt.obj.asInstanceOf[WorkResponse])
+		} else {
+			None
+		}
 	}
 	
 	def shutdown() = {

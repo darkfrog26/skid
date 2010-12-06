@@ -4,10 +4,10 @@ import java.io.File
 
 import java.net._
 
-import org.sgine.event.Event
+import org.sgine.event._
 
 import org.sgine.log._
-class CommunicationClient(val address: SocketAddress, val directory: File) extends Communication {
+class CommunicationClient(override val parent: Listenable, val address: SocketAddress, val directory: File) extends Communication {
 	protected val connection: Socket = new Socket()
 	
 	override def connect() = {
