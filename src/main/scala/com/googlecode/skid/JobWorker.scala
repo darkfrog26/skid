@@ -54,10 +54,7 @@ class JobWorker private(serverAddress: InetSocketAddress, storage: File) extends
 						val response = processWork(work)
 						finishedWork(work, response)
 					} catch {
-						case t => {
-							t.printStackTrace()
-							finishedWork(work, t, Status.Error)
-						}
+						case t => finishedWork(work, t, Status.Error)
 					}
 				}
 				case None => thread.synchronized {

@@ -134,33 +134,26 @@ class JobPersistence private(storage: File) {
 			}
 		}
 		
-		def storeJobInfo() = {
-			// Store persisted job information
-			val info = JobInfo(uuid, array: _*)
-			val file = new File(directory, "info.bin")
-			val output = new ObjectOutputStream(new FileOutputStream(file))
-			try {
-				output.writeObject(info)
-			} finally {
-				output.flush()
-				output.close()
-			}
+		// Store persisted job information
+		val info = JobInfo(uuid, array: _*)
+		val infoFile = new File(directory, "info.bin")
+		val outputInfo = new ObjectOutputStream(new FileOutputStream(infoFile))
+		try {
+			outputInfo.writeObject(info)
+		} finally {
+			outputInfo.flush()
+			outputInfo.close()
 		}
 		
-		def storeJob() = {
-			// Store persisted function
-			val file = new File(directory, "job.bin")
-			val output = new ObjectOutputStream(new FileOutputStream(file))
-			try {
-				output.writeObject(f)
-			} finally {
-				output.flush()
-				output.close()
-			}
+		// Store persisted function
+		val jobFile = new File(directory, "job.bin")
+		val outputJob = new ObjectOutputStream(new FileOutputStream(jobFile))
+		try {
+			outputJob.writeObject(f)
+		} finally {
+			outputJob.flush()
+			outputJob.close()
 		}
-		
-		storeJobInfo()
-		storeJob()
 		
 		// Return the UUID
 		uuid

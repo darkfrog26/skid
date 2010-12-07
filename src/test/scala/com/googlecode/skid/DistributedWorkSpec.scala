@@ -13,9 +13,10 @@ import org.sgine.event._
 
 import org.sgine.util.Time
 
-import org.specs._
+import org.scalatest.WordSpec
+import org.scalatest.matchers.ShouldMatchers
 
-object DistributedWorkSpec extends Specification {
+object DistributedWorkSpec extends WordSpec with ShouldMatchers {
 	org.sgine.log.Log.sourceLookup = true
 	
 	private val serverAddress = new InetSocketAddress("localhost", 2602)
@@ -31,42 +32,36 @@ object DistributedWorkSpec extends Specification {
 	private var workId: UUID = _
 	private var workFinished = false
 	
-	org.specs.util.Configuration.config = new org.specs.util.Configuration {
-		override def examplesWithoutExpectationsMustBePending = false
-	}
-	
-	shareVariables()
-	
 	"Server Directory" should {
 		"be deleted" in {
 			if (serverDirectory.exists) JobPersistence.delete(serverDirectory)
-			serverDirectory.exists must_== false
+			serverDirectory.exists should equal(false)
 		}
 		"be created" in {
 			serverDirectory.mkdirs()
-			serverDirectory.exists must_== true
+			serverDirectory.exists should equal(true)
 		}
 	}
 	
 	"Client Directory" should {
 		"be deleted" in {
 			if (clientDirectory.exists) JobPersistence.delete(clientDirectory)
-			clientDirectory.exists must_== false
+			clientDirectory.exists should equal(false)
 		}
 		"be created" in {
 			clientDirectory.mkdirs()
-			clientDirectory.exists must_== true
+			clientDirectory.exists should equal(true)
 		}
 	}
 	
 	"Worker1 Directory" should {
 		"be deleted" in {
 			if (worker1Directory.exists) JobPersistence.delete(worker1Directory)
-			worker1Directory.exists must_== false
+			worker1Directory.exists should equal(false)
 		}
 		"be created" in {
 			worker1Directory.mkdirs()
-			worker1Directory.exists must_== true
+			worker1Directory.exists should equal(true)
 		}
 	}
 	
@@ -101,7 +96,7 @@ object DistributedWorkSpec extends Specification {
 			Time.waitFor(10.0) {
 				server.work == 1
 			}
-			server.work must_== 1
+			server.work should equal(1)
 		}
 	}
 	
@@ -116,12 +111,12 @@ object DistributedWorkSpec extends Specification {
 		"get a job from server" in {
 			val option = worker1.requestWork()
 			work = option.get
-			work.uuid must_== workId
+			work.uuid should equal(workId)
 		}
 		
 		"process the job" in {
 			response = worker1.processWork(work)
-			response must_== "Hello from client!"
+			response should equal("Hello from client!")
 		}
 		
 		"respond with response from job to server" in {
@@ -134,7 +129,7 @@ object DistributedWorkSpec extends Specification {
 			Time.waitFor(10.0) {
 				server.work == 0
 			}
-			server.work must_== 0
+			server.work should equal(0)
 		}
 	}
 	
@@ -142,13 +137,13 @@ object DistributedWorkSpec extends Specification {
 		"receive the WorkFinished message" in {
 			Time.waitFor(10.0) {
 				workFinished
-			} must_== true
+			} should equal(true)
 		}
 		"request the response" in {
 			val wr = client.status(workId).get
-			wr.work.uuid must_== workId
-			wr.status must_== Status.Success
-			wr.response must_== "Hello from client!"
+			wr.work.uuid should equal(workId)
+			wr.status should equal(Status.Success)
+			wr.response should equal("Hello from client!")
 		}
 	}
 	

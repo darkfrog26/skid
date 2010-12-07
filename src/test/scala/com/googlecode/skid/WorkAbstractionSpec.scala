@@ -13,16 +13,11 @@ import org.sgine.event._
 
 import org.sgine.util.Time
 
-import org.specs._
+import org.scalatest.WordSpec
+import org.scalatest.matchers.ShouldMatchers
 
-class WorkAbstractionSpec extends Specification {
+class WorkAbstractionSpec extends WordSpec with ShouldMatchers {
 	org.sgine.log.Log.sourceLookup = true
-	
-	org.specs.util.Configuration.config = new org.specs.util.Configuration {
-		override def examplesWithoutExpectationsMustBePending = false
-	}
-	
-	shareVariables()
 	
 	private val serverAddress = new InetSocketAddress("localhost", 2603)
 	private val clientDirectory = new File("temp/client")
@@ -37,33 +32,33 @@ class WorkAbstractionSpec extends Specification {
 	"Server Directory" should {
 		"be deleted" in {
 			if (serverDirectory.exists) JobPersistence.delete(serverDirectory)
-			serverDirectory.exists must_== false
+			serverDirectory.exists should equal(false)
 		}
 		"be created" in {
 			serverDirectory.mkdirs()
-			serverDirectory.exists must_== true
+			serverDirectory.exists should equal(true)
 		}
 	}
 	
 	"Client Directory" should {
 		"be deleted" in {
 			if (clientDirectory.exists) JobPersistence.delete(clientDirectory)
-			clientDirectory.exists must_== false
+			clientDirectory.exists should equal(false)
 		}
 		"be created" in {
 			clientDirectory.mkdirs()
-			clientDirectory.exists must_== true
+			clientDirectory.exists should equal(true)
 		}
 	}
 	
 	"Worker1 Directory" should {
 		"be deleted" in {
 			if (worker1Directory.exists) JobPersistence.delete(worker1Directory)
-			worker1Directory.exists must_== false
+			worker1Directory.exists should equal(false)
 		}
 		"be created" in {
 			worker1Directory.mkdirs()
-			worker1Directory.exists must_== true
+			worker1Directory.exists should equal(true)
 		}
 	}
 	
@@ -84,12 +79,33 @@ class WorkAbstractionSpec extends Specification {
 			client.start()
 		}
 		
-		"invoke work remotely" in {
+		"invoke work remotely returning a String" in {
 			val s = client {
 				"Hello World!"
 			}.getOrElse(null)
-			s must_== "Hello World!"
+			s should equal("Hello World!")
 		}
+		
+		"invoke work remotely returning nothing" in {
+			val o = client {
+				println("Done something!")
+			}
+			o should not equal(None)
+		}
+		
+		"invoke work remotely throwing exception" in {
+			evaluating {
+				client {
+					throw new RuntimeException("Blargh!")
+				}
+			} should produce [RuntimeException]
+		}
+		
+		// TODO: reference a library
+		
+		// TODO: reference a capability
+		
+		// TODO: schedule something for the future
 	}
 	
 	"Worker1" should {
