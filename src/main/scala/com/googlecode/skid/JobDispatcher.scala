@@ -12,6 +12,8 @@ import org.sgine.event._
 
 import org.sgine.log._
 
+import org.sgine.util.Time
+
 /**
  * JobDispatcher is a client that connects remotely
  * to a centralized JobManager to send and receive
@@ -62,6 +64,29 @@ class JobDispatcher private(serverAddress: InetSocketAddress, storage: File) ext
 			Some(evt.obj.asInstanceOf[WorkResponse])
 		} else {
 			None
+		}
+	}
+	
+	def waitForFinish(uuid: UUID, time: Double = 10.0) = {
+		var option: Option[WorkResponse] = None
+		Time.waitFor(time) {
+			option = status(uuid, time)
+			option != None && (option.get.status == Status.Success || option.get.status == Status.Error)
+		}
+		option
+	}
+	
+	def apply[T](f: => T) = {
+		val uuid = send(f _, JobResource((f _).asInstanceOf[AnyRef].getClass, distribute = true))
+		waitForFinish(uuid, 10.0) match {
+			case Some(wr) => {
+				wr.status match {
+					case Status.Success => Some(wr.response.asInstanceOf[T])
+					case Status.Error => throw wr.response.asInstanceOf[Throwable]
+					case _ => None
+				}
+			}
+			case None => None
 		}
 	}
 	

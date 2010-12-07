@@ -70,6 +70,7 @@ trait Communication extends Listenable {
 					// Read header
 					val header = CommunicationHeader(input.readInt())
 					header match {
+						case CommunicationHeader.Null => Event.enqueue(ObjectReceived(uuid, null, this))
 						case CommunicationHeader.File => readFile(uuid)
 						case CommunicationHeader.Object => readObject(uuid)
 						case _ => throw new RuntimeException("Unknown CommunicationHeader: " + header)
@@ -78,9 +79,10 @@ trait Communication extends Listenable {
 			}
 		} catch {
 			case exc if (!keepAlive) =>	// Ignore
+			case exc: EOFException => warn("EOF")
 			case exc => {
 				warn(exc.getClass.getName)
-//				exc.printStackTrace()
+				exc.printStackTrace()
 				// TODO: notify of connection drop
 				keepAlive = false
 			}
@@ -92,6 +94,7 @@ trait Communication extends Listenable {
 			while (keepAlive) {
 				queue.poll() match {
 					case null => Thread.sleep(50)
+					case (uuid: UUID, null) => sendNull(uuid)
 					case (uuid: UUID, file: File) => sendFile(uuid, file)
 					case (uuid: UUID, value: Any) => sendObject(uuid, value)
 				}
@@ -160,6 +163,14 @@ trait Communication extends Listenable {
 			output.flush()
 			input.close()
 		}
+	}
+	
+	private def sendNull(uuid: UUID) = {
+		// Send UUID
+		writeObject(uuid)
+		
+		// Send object header
+		output.writeInt(CommunicationHeader.Null.ordinal)
 	}
 	
 	private def sendObject(uuid: UUID, value: Any) = {

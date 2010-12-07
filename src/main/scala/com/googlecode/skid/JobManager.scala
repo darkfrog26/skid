@@ -7,6 +7,7 @@ import java.io._
 import java.net.InetSocketAddress
 
 import java.util.Calendar
+import java.util.UUID
 
 import org.sgine.db._
 
@@ -42,7 +43,11 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) extend
 	
 	private def receivedObject(evt: ObjectReceived) = {
 		evt.obj match {
-			case work: Work => transaction.store(work)
+			case work: Work => {
+				transaction.store(work)
+				
+				broadcast(work.uuid, WorkQueued(work.uuid))
+			}
 			case request: WorkRequest => remoteWorkRequest(evt)
 			case response: WorkResponse => remoteWorkResponse(evt)
 			case statusRequest: WorkStatusRequest => remoteStatusRequest(evt)
@@ -80,8 +85,12 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) extend
 		
 		// Tell all the clients
 		val finished = WorkFinished(wr.work)
+		broadcast(evt.uuid, finished)
+	}
+	
+	def broadcast(uuid: UUID, value: Any) = {
 		for (client <- server.clients) {
-			client.send(evt.uuid, finished)
+			client.send(uuid, value)
 		}
 	}
 	
@@ -109,7 +118,6 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) extend
 							}
 						}
 					}
-					println("JobManager Response: " + response)
 					evt.communication.send(evt.uuid, WorkResponse(work, response, status))
 				}
 				case None => evt.communication.send(evt.uuid, WorkResponse(Work(evt.uuid), null, Status.NotFound))

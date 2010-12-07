@@ -8,6 +8,7 @@ sealed class CommunicationHeader extends Enum
 object CommunicationHeader extends Enumerated[CommunicationHeader] {
 	case object File extends CommunicationHeader
 	case object Object extends CommunicationHeader
+	case object Null extends CommunicationHeader
 	
-	CommunicationHeader(File, Object)
+	CommunicationHeader(File, Object, Null)
 }

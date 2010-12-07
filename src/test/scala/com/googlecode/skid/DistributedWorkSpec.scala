@@ -110,7 +110,7 @@ object DistributedWorkSpec extends Specification {
 		var response: Any = null
 		
 		"start" in {
-			worker1.start()
+			worker1.start(false)		// Don't auto-find new work
 		}
 		
 		"get a job from server" in {
