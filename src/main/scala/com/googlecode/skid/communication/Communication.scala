@@ -79,7 +79,7 @@ trait Communication extends Listenable {
 			}
 		} catch {
 			case exc if (!keepAlive) =>	// Ignore
-			case exc: EOFException => warn("EOF")
+			case exc: EOFException => warn("EOF"); keepAlive = false
 			case exc => {
 				warn(exc.getClass.getName)
 				exc.printStackTrace()
@@ -101,6 +101,7 @@ trait Communication extends Listenable {
 			}
 		} catch {
 			case exc if (!keepAlive) =>	// Ignore
+			case exc: SocketException => warn(exc.getMessage); keepAlive = false
 			case exc => {
 				warn(exc.getClass.getName)
 				exc.printStackTrace()
