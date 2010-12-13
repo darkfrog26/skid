@@ -11,7 +11,7 @@ import java.util.UUID
 
 import org.sgine.event._
 
-import org.sgine.util.Time
+import org.sgine.util.Time._
 
 import org.scalatest.WordSpec
 import org.scalatest.matchers.ShouldMatchers
@@ -80,10 +80,14 @@ class WorkAbstractionSpec extends WordSpec with ShouldMatchers {
 		}
 		
 		"invoke work remotely returning a String" in {
-			val s = client {
-				"Hello World!"
-			}.getOrElse(null)
-			s should equal("Hello World!")
+			log("Starting...")
+			val time = elapsed {
+				val s = client {
+					"Hello World!"
+				}.getOrElse(null)
+				s should equal("Hello World!")
+			}
+			println("Took: " + time + " seconds")
 		}
 		
 		"invoke work remotely returning nothing" in {
@@ -100,6 +104,8 @@ class WorkAbstractionSpec extends WordSpec with ShouldMatchers {
 				}
 			} should produce [RuntimeException]
 		}
+		
+		// TODO: worker should die in the middle of running task and work should be reassigned
 		
 		// TODO: reference a library
 		

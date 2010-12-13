@@ -45,7 +45,7 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) extend
 		evt.obj match {
 			case work: Work => {
 				transaction.store(work)
-				
+				info("Stored work")
 				broadcast(work.uuid, WorkQueued(work.uuid))
 			}
 			case request: WorkRequest => remoteWorkRequest(evt)
@@ -56,7 +56,10 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) extend
 	}
 	
 	// Received when a JobWorker (or other remote client) is requesting work to do
-	private def remoteWorkRequest(evt: ObjectReceived) = evt.communication.sendWork(evt.uuid, requestWork())
+	private def remoteWorkRequest(evt: ObjectReceived) = {
+		evt.communication.sendWork(evt.uuid, requestWork())
+		info("Send work to requster!")
+	}
 	
 	// Received when a JobWorker (or other remote client) has finished a job and is responding with the result
 	private def remoteWorkResponse(evt: ObjectReceived) = {
@@ -86,6 +89,8 @@ class JobManager private(serverAddress: InetSocketAddress, storage: File) extend
 		// Tell all the clients
 		val finished = WorkFinished(wr.work)
 		broadcast(evt.uuid, finished)
+		
+		info("Work response!")
 	}
 	
 	def broadcast(uuid: UUID, value: Any) = {
