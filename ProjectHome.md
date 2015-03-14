@@ -1,0 +1,1 @@
+The goal of Skid is to provide an easy to use framework for distributed computing on a grid of machines.
